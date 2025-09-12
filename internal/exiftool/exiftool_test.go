@@ -31,7 +31,7 @@ func TestNewExif(t *testing.T) {
 	jsonData, _ := json.MarshalIndent(imageMetadata, "", "  ")
 	fmt.Printf("\nJSON Output:\n%s\n", string(jsonData))
 
-	err = exifTool.writeItemToDisk(imageMetadata, "/app/tmp/test.json")
+	err = exifTool.WriteItemToDisk(imageMetadata, "/app/tmp/test.json")
 	if err != nil {
 		return
 	}

@@ -23,7 +23,7 @@ func NewExifTool() *ExifTool {
 	}
 }
 
-func (et *ExifTool) writeItemToDisk(me *Metadata, path string) error {
+func (et *ExifTool) WriteItemToDisk(me *Metadata, path string) error {
 
 	jsonData, err := json.MarshalIndent(me, "", "  ")
 	if err != nil {

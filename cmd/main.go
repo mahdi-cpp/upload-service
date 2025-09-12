@@ -44,7 +44,7 @@ func setupRoutes(router *gin.Engine, uploadHandler *handler.UploadHandler) {
 func routUploadHandler(router *gin.Engine, uploadHandler *handler.UploadHandler) {
 
 	router.POST("/api/v1/upload/create", uploadHandler.CreateDirectory)
-	router.POST("/api/v1/upload/image", uploadHandler.UploadImage)
+	router.POST("/api/v1/upload/media", uploadHandler.UploadMedia)
 	router.POST("/api/v1/upload/multiple", uploadHandler.UploadMultiple)
 	router.GET("/api/v1/upload/files", uploadHandler.ListFiles)
 }

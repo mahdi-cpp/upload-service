@@ -39,20 +39,40 @@ func TestChatCreate(t *testing.T) {
 	}
 
 	fmt.Println(r.ID)
-
-	currentURL = baseURL + "image"
-	filePath := "/app/files/videos/02.jpg" // Replace with a valid path to an image file.
+	currentURL = baseURL + "media"
 
 	// A context with a 30-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	body := &UploadRequest{
+	//--- upload 2
+	imageFile := "/app/tmp/test.jpg"
+	imageBody := &UploadRequest{
 		Directory: r.ID,
+		IsVideo:   false,
+	}
+	if err := UploadMedia(ctx, currentURL, imageFile, imageBody); err != nil {
+		t.Errorf("Error uploading media: %v", err)
 	}
 
-	if err := UploadImage(ctx, currentURL, filePath, body); err != nil {
-		t.Errorf("Error uploading image: %v", err)
+	//--- upload
+	videoFile := "/app/tmp/test.mp4"
+	videoBody := &UploadRequest{
+		Directory: r.ID,
+		IsVideo:   true,
+	}
+	if err := UploadMedia(ctx, currentURL, videoFile, videoBody); err != nil {
+		t.Errorf("Error uploading media: %v", err)
+	}
+
+	//--- upload
+	videoFile2 := "/app/tmp/test2.mp4"
+	videoBody2 := &UploadRequest{
+		Directory: r.ID,
+		IsVideo:   true,
+	}
+	if err := UploadMedia(ctx, currentURL, videoFile2, videoBody2); err != nil {
+		t.Errorf("Error uploading media: %v", err)
 	}
 }
 
@@ -71,11 +91,11 @@ func TestGenerateHash(t *testing.T) {
 	fmt.Printf("زمان لازم برای هش کردن: %v\n", duration)
 }
 
-// UploadImage uploads a file to the specified API endpoint.
+// UploadMedia uploads a file to the specified API endpoint.
 // The function takes the file path, the API URL, and a context for cancellation.
-// UploadImage uploads a file and a JSON payload to the specified API endpoint.
+// UploadMedia uploads a file and a JSON payload to the specified API endpoint.
 // The function takes the file path, the API URL, the directory UUID, and a context for cancellation.
-func UploadImage(ctx context.Context, apiURL, filePath string, uploadRequest *UploadRequest) error {
+func UploadMedia(ctx context.Context, apiURL, filePath string, uploadRequest *UploadRequest) error {
 
 	// Open the file to be uploaded.
 	file, err := os.Open(filePath)
@@ -95,7 +115,7 @@ func UploadImage(ctx context.Context, apiURL, filePath string, uploadRequest *Up
 	}
 
 	// Create a new form field for the JSON data.
-	jsonPart, err := writer.CreateFormField("data")
+	jsonPart, err := writer.CreateFormField("metadata")
 	if err != nil {
 		return fmt.Errorf("failed to create JSON form field: %w", err)
 	}
@@ -104,8 +124,8 @@ func UploadImage(ctx context.Context, apiURL, filePath string, uploadRequest *Up
 		return fmt.Errorf("failed to write JSON data to form field: %w", err)
 	}
 
-	// Create a form file part for the image.
-	filePart, err := writer.CreateFormFile("image", filepath.Base(filePath))
+	// Create a form file part for the media.
+	filePart, err := writer.CreateFormFile("media", filepath.Base(filePath))
 	if err != nil {
 		return fmt.Errorf("failed to create form file: %w", err)
 	}

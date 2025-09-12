@@ -7,12 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/mahdi-cpp/upload-service/internal/config"
+	"github.com/mahdi-cpp/upload-service/internal/exiftool"
+	"github.com/mahdi-cpp/upload-service/internal/ffmpeg"
 	"github.com/mahdi-cpp/upload-service/internal/helpers"
 	"github.com/mahdi-cpp/upload-service/internal/thumbnail"
 )
@@ -73,85 +74,15 @@ func (h *UploadHandler) CreateDirectory(c *gin.Context) {
 
 type UploadRequest struct {
 	Directory uuid.UUID `json:"directory"`
+	IsVideo   bool      `json:"isVideo"`
 	//Hash      string    `json:"hash"`
 }
 
-// UploadImage api/v1/upload/image" [POST]
-//func (h *UploadHandler) UploadImage(c *gin.Context) {
-//
-//	var request UploadRequest
-//	if err := c.ShouldBindJSON(&request); err != nil {
-//		helpers.AbortWithRequestInvalid(c)
-//		return
-//	}
-//
-//	// Single image upload
-//	file, err := c.FormFile("file")
-//	if err != nil {
-//		fmt.Println(err)
-//		c.JSON(http.StatusBadRequest, UploadResponse{
-//			Message: "No file uploaded",
-//			Error:   err.Error(),
-//		})
-//		return
-//	}
-//
-//	//hash, err := helpers.CreateSHA256Hash("/app/files/videos/01.jpg")
-//	//if err != nil {
-//	//	return
-//	//}
-//	//
-//	//if hash == "" {
-//	//}
-//
-//	// Check if it's a JPEG
-//	if !isJPEG(file) {
-//		fmt.Println("not jpeg")
-//		c.JSON(http.StatusBadRequest, UploadResponse{
-//			Message: "Only jpg files are allowed",
-//			Error:   "Invalid file type",
-//		})
-//		return
-//	}
-//
-//	// Generate unique filename
-//	imageID, err := generateId()
-//	if err != nil {
-//		fmt.Println(err)
-//		c.JSON(http.StatusBadRequest, gin.H{
-//			"message": "failed to upload image",
-//			"error":   err.Error(),
-//		})
-//	}
-//	fileDirectory := filepath.Join(h.UploadDir, imageID.String()+".jpg")
-//
-//	vips.Startup(nil)
-//	defer vips.Shutdown()
-//
-//	// Save the file
-//	if err := c.SaveUploadedFile(file, fileDirectory); err != nil {
-//		fmt.Printf("failed to upload image: %v", err)
-//		c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save file", Error: err.Error()})
-//		return
-//	}
-//
-//	//if err := thumbnail.CreateSingleThumbnail(fileDirectory, imageID.String()+".jpg"); err != nil {
-//	//	c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to create thumbnail file", Error: err.Error()})
-//	//	log.Fatalf("An error occurred during thumbnail creation: %v", err)
-//	//}
-//
-//	c.JSON(http.StatusOK, UploadResponse{
-//		Message:  "File uploaded successfully",
-//		Filename: imageID.String(),
-//		Size:     file.Size,
-//	})
-//}
-
-// UploadImage handles the image upload via multipart/form-data.
-func (h *UploadHandler) UploadImage(c *gin.Context) {
+// UploadMedia handles the image upload via multipart/form-data.
+func (h *UploadHandler) UploadMedia(c *gin.Context) {
 
 	// 1. Extract the JSON payload from the "data" form field.
-	jsonData := c.PostForm("data")
+	jsonData := c.PostForm("metadata")
 	if jsonData == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing 'data' form field"})
 		return
@@ -163,8 +94,8 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
-	// 2. Access the file from the "image" form field.
-	file, err := c.FormFile("image")
+	// 2. Access the file from the "media" form field.
+	file, err := c.FormFile("media")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, UploadResponse{
@@ -184,8 +115,8 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 	//	return
 	//}
 
-	// Generate unique filename
-	imageID, err := generateID()
+	//--- Generate unique filename
+	mediaID, err := generateID()
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -195,43 +126,98 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
+	//--- Save original file
 	workDir := filepath.Join(config.UploadDir, request.Directory.String())
 
-	original := filepath.Join(workDir, imageID.String()+".jpg")
+	if request.IsVideo {
 
-	// Save the file
-	if err := c.SaveUploadedFile(file, original); err != nil {
-		fmt.Printf("failed to save image: %v", err)
-		c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save file", Error: err.Error()})
-		return
-	}
+		originalVideo := filepath.Join(workDir, mediaID.String()+".mp4")
+		if err := c.SaveUploadedFile(file, originalVideo); err != nil {
+			fmt.Printf("failed to save video: %v", err)
+			c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save image", Error: err.Error()})
+			return
+		}
 
-	_, err = os.ReadFile(original)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to create thumbnail",
-		})
-		return
-	}
+		coverFile := filepath.Join(workDir, mediaID.String()+".jpg")
+		if err := ffmpeg.ExtractFrame(originalVideo, coverFile); err != nil {
+			c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save video", Error: err.Error()})
+		}
 
-	var sizes = []int{200}
+		//--- Thumbnail
+		var sizes = []int{200, 400}
+		for _, size := range sizes {
+			thumbnailPath := filepath.Join(workDir, mediaID.String())
+			if err := thumbnail.ProcessImage2(coverFile, thumbnailPath, size); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "failed to create thumbnail",
+				})
+			}
+		}
 
-	start := time.Now()
-	for _, size := range sizes {
-		thumbnailPath := filepath.Join(workDir, imageID.String())
+		//--- Metadata
+		exifTool := exiftool.NewExifTool()
+		imageMetadata, err := exifTool.GetMetadata(originalVideo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "failed to create metadata",
+			})
+		}
+		err = exifTool.WriteItemToDisk(imageMetadata, filepath.Join(workDir, mediaID.String()+".json"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "failed to save metadata to file",
+			})
+		}
 
-		if err := thumbnail.ProcessImage2(original, thumbnailPath, size); err != nil {
+	} else {
+
+		original := filepath.Join(workDir, mediaID.String()+".jpg")
+
+		if err := c.SaveUploadedFile(file, original); err != nil {
+			fmt.Printf("failed to save image: %v", err)
+			c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save image", Error: err.Error()})
+			return
+		}
+
+		_, err = os.ReadFile(original)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "failed to create thumbnail",
 			})
+			return
+		}
+
+		//--- Thumbnail
+		var sizes = []int{200}
+		for _, size := range sizes {
+			thumbnailPath := filepath.Join(workDir, mediaID.String())
+
+			if err := thumbnail.ProcessImage2(original, thumbnailPath, size); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": "failed to create thumbnail",
+				})
+			}
+		}
+
+		//--- Metadata
+		exifTool := exiftool.NewExifTool()
+		imageMetadata, err := exifTool.GetMetadata(original)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "failed to create metadata",
+			})
+		}
+		err = exifTool.WriteItemToDisk(imageMetadata, filepath.Join(workDir, mediaID.String()+".json"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "failed to save metadata to file",
+			})
 		}
 	}
-	duration := time.Since(start)
-	fmt.Println("duration: ", duration)
 
 	c.JSON(http.StatusOK, UploadResponse{
 		Message:  "File uploaded successfully",
-		Filename: imageID.String(),
+		Filename: mediaID.String(),
 		Size:     file.Size,
 	})
 }
