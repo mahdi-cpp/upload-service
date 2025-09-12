@@ -7,12 +7,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/mahdi-cpp/upload-service/internal/config"
 	"github.com/mahdi-cpp/upload-service/internal/helpers"
+	"github.com/mahdi-cpp/upload-service/internal/thumbnail"
 )
 
 //https://chat.deepseek.com/a/chat/s/913cf162-1ad1-4857-8048-2990d3c959a4
@@ -145,11 +147,6 @@ type UploadRequest struct {
 //	})
 //}
 
-// generateID generates a new UUID v7.
-func generateID() (uuid.UUID, error) {
-	return uuid.NewV7()
-}
-
 // UploadImage handles the image upload via multipart/form-data.
 func (h *UploadHandler) UploadImage(c *gin.Context) {
 
@@ -198,14 +195,39 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
-	fileDirectory := filepath.Join(config.UploadDir, request.Directory.String(), imageID.String()+".jpg")
+	workDir := filepath.Join(config.UploadDir, request.Directory.String())
+
+	original := filepath.Join(workDir, imageID.String()+".jpg")
 
 	// Save the file
-	if err := c.SaveUploadedFile(file, fileDirectory); err != nil {
+	if err := c.SaveUploadedFile(file, original); err != nil {
 		fmt.Printf("failed to save image: %v", err)
 		c.JSON(http.StatusInternalServerError, UploadResponse{Message: "Failed to save file", Error: err.Error()})
 		return
 	}
+
+	_, err = os.ReadFile(original)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "failed to create thumbnail",
+		})
+		return
+	}
+
+	var sizes = []int{200}
+
+	start := time.Now()
+	for _, size := range sizes {
+		thumbnailPath := filepath.Join(workDir, imageID.String())
+
+		if err := thumbnail.ProcessImage2(original, thumbnailPath, size); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "failed to create thumbnail",
+			})
+		}
+	}
+	duration := time.Since(start)
+	fmt.Println("duration: ", duration)
 
 	c.JSON(http.StatusOK, UploadResponse{
 		Message:  "File uploaded successfully",
@@ -336,4 +358,9 @@ func getJPEGFiles(dir string) ([]string, error) {
 	})
 
 	return files, err
+}
+
+// generateID generates a new UUID v7.
+func generateID() (uuid.UUID, error) {
+	return uuid.NewV7()
 }

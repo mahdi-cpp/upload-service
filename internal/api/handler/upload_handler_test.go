@@ -40,9 +40,8 @@ func TestChatCreate(t *testing.T) {
 
 	fmt.Println(r.ID)
 
-	// Note: You would replace this with your actual API endpoint.
-	apiURL := "http://localhost:50103/api/v1/upload/image"
-	filePath := "/app/files/videos/01.jpg" // Replace with a valid path to an image file.
+	currentURL = baseURL + "image"
+	filePath := "/app/files/videos/02.jpg" // Replace with a valid path to an image file.
 
 	// A context with a 30-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -52,9 +51,8 @@ func TestChatCreate(t *testing.T) {
 		Directory: r.ID,
 	}
 
-	fmt.Println("Attempting to upload file...")
-	if err := UploadImage(ctx, apiURL, filePath, body); err != nil {
-		log.Fatalf("Error uploading image: %v", err)
+	if err := UploadImage(ctx, currentURL, filePath, body); err != nil {
+		t.Errorf("Error uploading image: %v", err)
 	}
 }
 

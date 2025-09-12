@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,8 +14,9 @@ import (
 
 const userID = "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4"
 const workers = 1
-const maxDimension = 270
-const targetWidth = 270
+
+//const maxDimension = 270
+//const targetWidth = 270
 
 func isImageFile(entry os.DirEntry) bool {
 	name := strings.ToLower(entry.Name())
@@ -32,7 +34,7 @@ func CreateSingleThumbnail(src string, fileName string) error {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	if err := processImage(src, "app/tmp/ali/"+fileName); err != nil {
+	if err := ProcessImage(src, "app/tmp/ali/"+fileName, 270); err != nil {
 		log.Printf("failed create single thumbnail %s: %v", src, err)
 	}
 
@@ -63,7 +65,7 @@ func CreateThumbnails() error {
 			for filePath := range jobs {
 				fileName := filepath.Base(filePath)
 				dest := filepath.Join(thumbPath, fileName)
-				if err := processImage(filePath, dest); err != nil {
+				if err := ProcessImage(filePath, dest, 270); err != nil {
 					log.Printf("Error processing %s: %v", fileName, err)
 				}
 			}
@@ -83,10 +85,10 @@ func CreateThumbnails() error {
 	return nil
 }
 
-func processImage(filePath string, savePath string) error {
+func ProcessImage(originalPath string, thumbPath string, targetWidth int) error {
 
 	// First get img dimensions to determine orientation
-	file, err := os.Open(filePath)
+	file, err := os.Open(originalPath)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
@@ -134,7 +136,7 @@ func processImage(filePath string, savePath string) error {
 	//img.Close()
 
 	// Reopen the file for thumbnail processing
-	//file2, err := os.Open(filePath)
+	//file2, err := os.Open(originalPath)
 	//if err != nil {
 	//	return fmt.Errorf("failed to reopen file: %w", err)
 	//}
@@ -146,7 +148,7 @@ func processImage(filePath string, savePath string) error {
 	//var thumbImage *vips.Image
 
 	//if img.Format() == vips.ImageTypeHeif {
-	//err = img.Heifsave(savePath, &vips.HeifsaveOptions{})
+	//err = img.Heifsave(thumbPath, &vips.HeifsaveOptions{})
 	//if err != nil {
 	//	fmt.Println("2 error Heifsave ", err.Error())
 	//	return err
@@ -154,14 +156,14 @@ func processImage(filePath string, savePath string) error {
 	//} else {
 
 	// Check if the filename has a .heic extension.
-	if strings.HasSuffix(savePath, ".heic") {
+	if strings.HasSuffix(thumbPath, ".heic") {
 		// Replace the extension with .jpg.
-		savePath = strings.TrimSuffix(savePath, filepath.Ext(savePath)) + ".jpg"
+		thumbPath = strings.TrimSuffix(thumbPath, filepath.Ext(thumbPath)) + ".jpg"
 	}
 
-	err = img.Jpegsave(savePath, &vips.JpegsaveOptions{})
+	err = img.Jpegsave(thumbPath, &vips.JpegsaveOptions{})
 	if err != nil {
-		fmt.Println("2 error Jpegsave ", err.Error())
+		fmt.Println("error save jpeg", err.Error())
 		return err
 	}
 	//}
@@ -189,26 +191,78 @@ func processImage(filePath string, savePath string) error {
 	//defer thumbImage.Close()
 
 	// Save with quality options
-	//err = thumbImage.Jpegsave(savePath, &vips.JpegsaveOptions{
+	//err = thumbImage.Jpegsave(thumbPath, &vips.JpegsaveOptions{
 	//	//Quality: 85,
 	//})
 	//if err != nil {
 	//	return fmt.Errorf("failed to save img: %w", err)
 	//}
 
-	log.Printf("Successfully created thumbnail for %s", filepath.Base(filePath))
+	log.Printf("Successfully created thumbnail for %s", filepath.Base(originalPath))
 	return nil
 }
 
-//func main() {
-//
-//	vips.Startup(nil)
-//	defer vips.Shutdown()
-//
-//	start := time.Now()
-//	if err := CreateThumbnails(); err != nil {
-//		log.Fatalf("An error occurred during thumbnail creation: %v", err)
-//	}
-//	elapsed := time.Since(start)
-//	fmt.Printf("Thumbnail creation took %s to run.\n", elapsed)
-//}
+func ProcessImage2(originalPath string, thumbPath string, targetWidth int) error {
+
+	// First get img dimensions to determine orientation
+	file, err := os.Open(originalPath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+		}
+	}(file)
+
+	source := vips.NewSource(file)
+	img, err := vips.NewImageFromSource(source, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get img dimensions: %w", err)
+	}
+	defer img.Close()
+	defer source.Close()
+
+	fmt.Println("img orientation ", img.Orientation())
+	var width = 0
+	var height = 0
+	if img.Orientation() == 6 {
+		width = img.Height()
+		height = img.Width()
+	} else {
+		width = img.Width()
+		height = img.Height()
+	}
+
+	// Calculate resize scale based on orientation
+	var scale float64
+	if width >= height { // Landscape or square
+		scale = float64(targetWidth) / float64(width)
+	} else { // Portrait
+		scale = float64(targetWidth) / float64(width)
+	}
+
+	// Resize the img
+	err = img.Resize(scale, &vips.ResizeOptions{Kernel: vips.KernelNearest})
+	if err != nil {
+		fmt.Println("1", err.Error())
+		return fmt.Errorf("failed to resize img: %w", err)
+	}
+
+	// Check if the filename has a .heic extension.
+	if strings.HasSuffix(thumbPath, ".heic") {
+		// Replace the extension with .jpg.
+		thumbPath = strings.TrimSuffix(thumbPath, filepath.Ext(thumbPath)) + ".jpg"
+	}
+
+	des := thumbPath + "-" + strconv.Itoa(targetWidth) + ".jpg"
+	err = img.Jpegsave(des, &vips.JpegsaveOptions{})
+	if err != nil {
+		fmt.Println("error save jpeg", err.Error())
+		return err
+	}
+
+	log.Printf("Successfully created thumbnail for %s", filepath.Base(originalPath))
+	return nil
+}
