@@ -136,6 +136,11 @@ func GenerateUUID() (uuid.UUID, error) {
 	return u7, nil
 }
 
+//// generateID generates a new UUID v7.
+//func generateID() (uuid.UUID, error) {
+//	return uuid.NewV7()
+//}
+
 func CreateDirectory(path string, perm os.FileMode) error {
 	// os.MkdirAll is the preferred function as it creates the entire path
 	// and does not return an error if the directory already exists.

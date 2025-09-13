@@ -20,7 +20,7 @@ func AbortWithError(c *gin.Context, status int, message string) {
 // AbortWithUserIDInvalid یک پاسخ خطا برای زمانی که user_id نامعتبر است، ارسال می‌کند.
 func AbortWithUserIDInvalid(c *gin.Context) {
 	c.JSON(http.StatusInternalServerError, gin.H{"error": ErrorUserID})
-	c.Abort() // This stops the next handler from running
+	c.Abort() // This stops the next download from running
 }
 
 func AbortWithRequestInvalid(c *gin.Context) {
