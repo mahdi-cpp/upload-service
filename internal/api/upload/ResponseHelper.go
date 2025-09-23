@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/mahdi-cpp/upload-service/internal/exiftool"
 )
 
 // ResponseHelper handles standardized API responses
@@ -37,6 +38,9 @@ func (rh *ResponseHelper) SendError(c *gin.Context, statusCode int, message stri
 // SendSuccess sends a successful response
 func (rh *ResponseHelper) SendSuccess(c *gin.Context, message string, id uuid.UUID) {
 	rh.Send(c, http.StatusOK, message, nil, id)
+}
+func (rh *ResponseHelper) SendSuccessMetadata(c *gin.Context, metadata *exiftool.Metadata) {
+	c.JSON(http.StatusOK, metadata)
 }
 
 // Initialize the response helper (you can also inject this via dependency injection)

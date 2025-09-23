@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/mahdi-cpp/iris-tools/image_loader"
-	"github.com/mahdi-cpp/upload-service/internal/config"
 )
 
 type AppManager struct {
@@ -24,9 +23,9 @@ func NewAppManager() (*AppManager, error) {
 		//}),
 	}
 
-	manager.IconImageLoader = image_loader.NewImageLoader(5000, config.UploadDir, 0)
-	manager.OriginalImageLoader = image_loader.NewImageLoader(100, config.UploadDir, 0)
-	manager.ThumbnailImageLoader = image_loader.NewImageLoader(5000, config.UploadDir, 0)
+	manager.IconImageLoader = image_loader.NewImageLoader(5000, "/app/iris/", 0)
+	manager.OriginalImageLoader = image_loader.NewImageLoader(100, "/app/iris/", 0)
+	manager.ThumbnailImageLoader = image_loader.NewImageLoader(5000, "/app/iris/", 0)
 
 	//// Check the connection to Redis.
 	//_, err := manager.rdb.Ping(ctx).Result()

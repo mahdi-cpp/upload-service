@@ -136,20 +136,6 @@ func GenerateUUID() (uuid.UUID, error) {
 	return u7, nil
 }
 
-//// generateID generates a new UUID v7.
-//func generateID() (uuid.UUID, error) {
-//	return uuid.NewV7()
-//}
-
-func CreateDirectory(path string, perm os.FileMode) error {
-	// os.MkdirAll is the preferred function as it creates the entire path
-	// and does not return an error if the directory already exists.
-	if err := os.MkdirAll(path, perm); err != nil {
-		return fmt.Errorf("failed to create directory '%s': %w", path, err)
-	}
-	return nil
-}
-
 // CreateSHA256Hash generates a SHA-256 hash for a given file.
 // It returns the hexadecimal string representation of the hash and an error if one occurs.
 // This function demonstrates a common convention for handling file operations in Go.

@@ -124,7 +124,7 @@ func (et *ExifTool) parseFileInfo(filename string, rawData map[string]interface{
 		BaseURL: filepath.Base(filename),
 	}
 
-	if size, ok := getString(rawData, "FileSize"); ok {
+	if size, ok := getInt(rawData, "FileSize"); ok {
 		fileInfo.FileSize = size
 	}
 

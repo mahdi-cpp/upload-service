@@ -71,77 +71,83 @@ func (h *Handler) UploadMedia(c *gin.Context) {
 		return
 	}
 
+	var metadata *exiftool.Metadata
+
 	// Process media based on type
 	if request.IsVideo {
-		if err := h.processVideo(c, file, mediaID, workDir); err != nil {
+		metadata, err = h.processVideo(c, file, mediaID, workDir)
+		if err != nil {
 			responseHelper.SendError(c, http.StatusInternalServerError, "Failed to process video", err)
 			return
 		}
 	} else {
-		if err := h.processImage(c, file, mediaID, workDir); err != nil {
+		metadata, err = h.processImage(c, file, mediaID, workDir)
+		if err != nil {
 			responseHelper.SendError(c, http.StatusInternalServerError, "Failed to process image", err)
 			return
 		}
 	}
 
-	responseHelper.SendSuccess(c, "File uploaded successfully", mediaID)
+	responseHelper.SendSuccessMetadata(c, metadata)
 }
 
-func (h *Handler) processVideo(c *gin.Context, file *multipart.FileHeader, mediaID uuid.UUID, workDir string) error {
+func (h *Handler) processVideo(c *gin.Context, file *multipart.FileHeader, mediaID uuid.UUID, workDir string) (*exiftool.Metadata, error) {
 
 	originalVideo := filepath.Join(workDir, mediaID.String()+".mp4")
 	if err := c.SaveUploadedFile(file, originalVideo); err != nil {
-		return fmt.Errorf("save video: %w", err)
+		return nil, fmt.Errorf("save video: %w", err)
 	}
 
 	coverFile := filepath.Join(workDir, mediaID.String()+".jpg")
 	if err := ffmpeg.ExtractFrame(originalVideo, coverFile); err != nil {
-		return fmt.Errorf("extract frame: %w", err)
+		return nil, fmt.Errorf("extract frame: %w", err)
 	}
 
 	sizes := []int{200, 400}
 	for _, size := range sizes {
 		thumbnailPath := filepath.Join(workDir, mediaID.String())
 		if err := thumbnail.ProcessImage2(coverFile, thumbnailPath, size); err != nil {
-			return fmt.Errorf("generate thumbnail %d: %w", size, err)
+			return nil, fmt.Errorf("generate thumbnail %d: %w", size, err)
 		}
 	}
 
 	return h.saveMetadata(originalVideo, mediaID, workDir)
 }
 
-func (h *Handler) processImage(c *gin.Context, file *multipart.FileHeader, mediaID uuid.UUID, workDir string) error {
+func (h *Handler) processImage(c *gin.Context, file *multipart.FileHeader, mediaID uuid.UUID, workDir string) (*exiftool.Metadata, error) {
 	original := filepath.Join(workDir, mediaID.String()+".jpg")
 	if err := c.SaveUploadedFile(file, original); err != nil {
-		return fmt.Errorf("save image: %w", err)
+		return nil, fmt.Errorf("save image: %w", err)
 	}
 
 	sizes := []int{200}
 	for _, size := range sizes {
 		thumbnailPath := filepath.Join(workDir, mediaID.String())
 		if err := thumbnail.ProcessImage2(original, thumbnailPath, size); err != nil {
-			return fmt.Errorf("generate thumbnail %d: %w", size, err)
+			return nil, fmt.Errorf("generate thumbnail %d: %w", size, err)
 		}
 	}
 
 	return h.saveMetadata(original, mediaID, workDir)
 }
 
-func (h *Handler) saveMetadata(mediaPath string, mediaID uuid.UUID, workDir string) error {
+func (h *Handler) saveMetadata(mediaPath string, mediaID uuid.UUID, workDir string) (*exiftool.Metadata, error) {
 	exifTool := exiftool.NewExifTool()
 	//defer exifTool.Close() // Assuming ExifTool has a Close method for cleanup
 
-	imageMetadata, err := exifTool.GetMetadata(mediaPath)
+	metadata, err := exifTool.GetMetadata(mediaPath)
 	if err != nil {
-		return fmt.Errorf("get metadata: %w", err)
+		return nil, fmt.Errorf("get metadata: %w", err)
 	}
 
 	metadataPath := filepath.Join(workDir, mediaID.String()+".json")
-	if err := exifTool.SaveMetadata(imageMetadata, metadataPath); err != nil {
-		return fmt.Errorf("save metadata: %w", err)
+	if err := exifTool.SaveMetadata(metadata, metadataPath); err != nil {
+		return nil, fmt.Errorf("save metadata: %w", err)
 	}
 
-	return nil
+	metadata.ID = mediaID
+
+	return metadata, nil
 }
 
 //

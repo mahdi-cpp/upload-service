@@ -1,8 +1,13 @@
 package exiftool
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Metadata struct {
+	ID               uuid.UUID              `json:"id"`
 	FileInfo         FileInfo               `json:"fileInfo,omitempty"`
 	Image            ImageInfo              `json:"image,omitempty"`
 	Camera           CameraInfo             `json:"camera,omitempty"`
@@ -14,7 +19,7 @@ type Metadata struct {
 
 type FileInfo struct {
 	BaseURL  string `json:"baseURL"`
-	FileSize string `json:"fileSize"`
+	FileSize int    `json:"fileSize"`
 	FileType string `json:"fileType"`
 	MimeType string `json:"mimeType"`
 }

@@ -18,9 +18,7 @@ var Router = gin.Default()
 var port = 50103
 
 func initGin() {
-
 	gin.SetMode(gin.ReleaseMode)
-
 	Router = gin.Default()
 }
 

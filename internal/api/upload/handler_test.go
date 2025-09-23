@@ -48,7 +48,7 @@ func TestUploadMedias(t *testing.T) {
 	defer cancel()
 
 	//--- upload
-	resp, err1 := uploadImage(ctx, httpClient, apiURL, r.ID, "/app/tmp/test.jpg")
+	resp, err1 := uploadImage(ctx, httpClient, apiURL, r.ID, "/app/tmp/test.heic")
 	if err1 != nil {
 		t.Errorf("%v", err)
 	}
