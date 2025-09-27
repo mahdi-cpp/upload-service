@@ -256,7 +256,7 @@ func ProcessImage2(originalPath string, thumbPath string, targetWidth int) error
 		thumbPath = strings.TrimSuffix(thumbPath, filepath.Ext(thumbPath)) + ".jpg"
 	}
 
-	des := thumbPath + "-" + strconv.Itoa(targetWidth) + ".jpg"
+	des := thumbPath + "_" + strconv.Itoa(targetWidth) + ".jpg"
 	err = img.Jpegsave(des, &vips.JpegsaveOptions{})
 	if err != nil {
 		fmt.Println("error save jpeg", err.Error())

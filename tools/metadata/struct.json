@@ -1,0 +1,41 @@
+{
+  "file_info": {
+    "source_file": "input.jpg",
+    "file_name": "input.jpg",
+    "file_size": "6.7 MB",
+    "file_type": "JPEG",
+    "mime_type": "image/jpeg",
+    "directory": "."
+  },
+  "image_properties": {
+    "width": 4128,
+    "height": 2322,
+    "megapixels": 9.6,
+    "orientation": "Rotate 90 CW",
+    "color_space": "sRGB",
+    "encoding_process": "Baseline DCT, Huffman coding"
+  },
+  "camera_and_capture_info": {
+    "make": "samsung",
+    "model": "GT-I9515",
+    "software": "I9515XXU1BPE1",
+    "date_time_original": "2018:03:28 11:14:47",
+    "exposure_time": "1/720",
+    "f_number": 2.2,
+    "iso": 50,
+    "focal_length": "4.2 mm",
+    "focal_length_35mm": "31 mm",
+    "flash": "No Flash",
+    "light_source": "Unknown",
+    "exposure_mode": "Auto",
+    "white_balance": "Auto"
+  },
+  "technical_metadata": {
+    "exif_version": "0220",
+    "resolution_unit": "inches",
+    "x_resolution": 72,
+    "y_resolution": 72,
+    "bits_per_sample": 8,
+    "ycbcr_sub_sampling": "YCbCr4:2:0 (2 2)"
+  }
+}

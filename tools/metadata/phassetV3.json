@@ -1,0 +1,50 @@
+{
+  "id": "0198c111-0f9a-7de4-9a2b-57e494d984fb",
+  "userID": "018f3a8b-1b32-729a-f7e5-5467c1b2d3e4",
+  "file": {
+    "baseURL": "com.iris.photos/users/018f3a8b-1b32-729a-f7e5-5467c1b2d3e4/assets",
+    "fileSize": "1419 kB",
+    "fileType": "JPEG",
+    "mimeType": ""
+  },
+  "image": {
+    "width": 1080,
+    "height": 2400,
+    "megapixels": 0,
+    "orientation": "Unknown (0)",
+    "colorSpace": "",
+    "encodingProcess": ""
+  },
+  "video": {},
+  "camera": {
+    "make": "",
+    "model": "",
+    "software": "",
+    "dateTimeOriginal": "0001-01-01T00:00:00Z",
+    "exposureTime": "",
+    "fNumber": 0,
+    "iso": 0,
+    "focalLength": "",
+    "focalLength35mm": "",
+    "flash": "",
+    "lightSource": "",
+    "exposureMode": "",
+    "whiteBalance": ""
+  },
+  "place": {},
+  "isCamera": false,
+  "isFavorite": false,
+  "isScreenshot": false,
+  "isHidden": false,
+  "albums": null,
+  "trips": null,
+  "persons": null,
+  "canDelete": false,
+  "canEditContent": false,
+  "canAddToSharedAlbum": false,
+  "IsUserLibraryAsset": false,
+  "createdAt": "2025-08-24T10:37:06.168203437+03:30",
+  "updatedAt": "2025-08-24T10:37:06.168203602+03:30",
+  "deletedAt": "0001-01-01T00:00:00Z",
+  "version": "v3"
+}

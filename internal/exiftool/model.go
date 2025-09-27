@@ -2,12 +2,9 @@ package exiftool
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Metadata struct {
-	ID               uuid.UUID              `json:"id"`
 	FileInfo         FileInfo               `json:"fileInfo,omitempty"`
 	Image            ImageInfo              `json:"image,omitempty"`
 	Camera           CameraInfo             `json:"camera,omitempty"`

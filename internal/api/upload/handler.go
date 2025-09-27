@@ -103,7 +103,7 @@ func (h *Handler) processVideo(c *gin.Context, file *multipart.FileHeader, media
 		return nil, fmt.Errorf("extract frame: %w", err)
 	}
 
-	sizes := []int{200, 400}
+	sizes := []int{270, 400}
 	for _, size := range sizes {
 		thumbnailPath := filepath.Join(workDir, mediaID.String())
 		if err := thumbnail.ProcessImage2(coverFile, thumbnailPath, size); err != nil {
@@ -120,7 +120,7 @@ func (h *Handler) processImage(c *gin.Context, file *multipart.FileHeader, media
 		return nil, fmt.Errorf("save image: %w", err)
 	}
 
-	sizes := []int{200}
+	sizes := []int{270}
 	for _, size := range sizes {
 		thumbnailPath := filepath.Join(workDir, mediaID.String())
 		if err := thumbnail.ProcessImage2(original, thumbnailPath, size); err != nil {
@@ -145,7 +145,7 @@ func (h *Handler) saveMetadata(mediaPath string, mediaID uuid.UUID, workDir stri
 		return nil, fmt.Errorf("save metadata: %w", err)
 	}
 
-	metadata.ID = mediaID
+	//metadata.ID = mediaID
 
 	return metadata, nil
 }
