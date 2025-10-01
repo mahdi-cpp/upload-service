@@ -140,10 +140,10 @@ func (h *Handler) saveMetadata(mediaPath string, mediaID uuid.UUID, workDir stri
 		return nil, fmt.Errorf("get metadata: %w", err)
 	}
 
-	metadataPath := filepath.Join(workDir, mediaID.String()+".json")
-	if err := exifTool.SaveMetadata(metadata, metadataPath); err != nil {
-		return nil, fmt.Errorf("save metadata: %w", err)
-	}
+	//metadataPath := filepath.Join(workDir, mediaID.String()+".json")
+	//if err := exifTool.SaveMetadata(metadata, metadataPath); err != nil {
+	//	return nil, fmt.Errorf("save metadata: %w", err)
+	//}
 
 	//metadata.ID = mediaID
 

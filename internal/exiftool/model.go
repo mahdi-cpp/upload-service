@@ -15,6 +15,7 @@ type Metadata struct {
 }
 
 type FileInfo struct {
+	FileName string `json:"fileName"`
 	BaseURL  string `json:"baseURL"`
 	FileSize int    `json:"fileSize"`
 	FileType string `json:"fileType"`
